@@ -106,7 +106,8 @@ npm run typecheck
 
 1. `npm run build && npm publish --dry-run --access public`
 2. `npm login`, then `npm publish --access public`
-3. Or tag `v*` on GitHub with repo secret `NPM_TOKEN` (see `.github/workflows/publish.yml`).
+3. Or tag `v*` on GitHub with repo secret **`NPM_TOKEN`** — must be an npm
+   [**Automation**](https://www.npmjs.com/settings/~tokens) token (Publish tokens require OTP in CI).
 
 ## License
 
