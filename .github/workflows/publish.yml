@@ -6,6 +6,11 @@ on:
     tags:
       - "v*"
 
+# Required for npm trusted publishing (OIDC) — no long-lived token or OTP in CI.
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -14,8 +19,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Install npm (trusted publishing requires v11.5.1+)
+        run: npm install -g npm@11
 
       - name: Install dependencies
         run: npm ci
@@ -29,13 +37,10 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Dry run publish
-        run: npm publish --dry-run --access public
-
       - name: Publish to npm
         if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
         run: npm publish --access public
         env:
-          # npm "Automation" token (Publish tokens require --otp in CI).
-          # npm → GitHub integration may name this NPM_<token-id>; NPM_TOKEN also works.
+          # Fallback only if trusted publishing is not configured on npmjs.com yet.
+          # Must be an npm *Automation* token — Publish tokens always require --otp.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK }}
