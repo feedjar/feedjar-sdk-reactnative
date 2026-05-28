@@ -1,115 +1,112 @@
 # FeedJarKit for React Native (`@feedjar/sdk-react-native`)
 
-TypeScript SDK aligned with **FeedJarKit iOS** and **`@feedjar/sdk-web`**: same `POST` / `GET` `/ingest/feedback` endpoints, `fjr_` API keys, and support-email validation.
+TypeScript SDK aligned with **FeedJarKit iOS**: same `FeedJar` / `FeedJarClient` HTTP contract, `FeedbackType` + `featureRequest` alias, support-email validation, and a built-in feedback modal.
 
-Uses Hermes / React Native’s built-in **`fetch`** — no native code or extra networking dependency.
+Uses Hermes / React Native’s built-in **`fetch`** — no native modules.
 
 ## Layout
 
 ```
 feedjar-sdk-reactnative/
+├── src/
+│   ├── feedjar.ts              # FeedJar.configure / submit (iOS parity)
+│   ├── feedjar-client.ts       # internal HTTP
+│   ├── feedjar-error.ts
+│   ├── models.ts               # FeedbackType
+│   ├── FeedJarFeedbackModal.tsx
+│   └── index.ts
 ├── package.json
-├── tsconfig.json
-├── README.md
-└── src/
-    └── index.ts
+└── tsconfig.json
 ```
 
 ## Install
 
 ```bash
 npm install @feedjar/sdk-react-native
-# or: pnpm add @feedjar/sdk-react-native
-# or: yarn add @feedjar/sdk-react-native
 ```
 
-For local development against this repo:
+Requires **React 18+** and **React Native 0.71+** (peer dependencies).
 
-```bash
-pnpm add ../feedjar-sdk-reactnative
-# or: npm install file:../feedjar-sdk-reactnative
-```
-
-From the SDK folder:
-
-```bash
-npm install
-npm run build
-```
-
-Metro resolves `react-native` entry to `src/index.ts` during development; production builds can use `dist/` from `npm run build`.
-
-## Usage
+## Configure once at launch
 
 ```tsx
+import { FeedJar } from "@feedjar/sdk-react-native";
+
+FeedJar.configure("fjr_...");
+// Optional for local API (Android-style override):
+// FeedJar.defaultApiBaseUrl = "http://10.0.2.2:4000";
+```
+
+Production ingest host defaults to `https://api.feedjar.in` (same as iOS).
+
+## Built-in feedback UI
+
+```tsx
+import { useState } from "react";
 import {
-  configure,
-  submit,
-  listFeedback,
-  FeedJarError,
+  FeedJarFeedbackModal,
+  FeedbackType,
 } from "@feedjar/sdk-react-native";
-import { useEffect } from "react";
 
 export function App() {
-  useEffect(() => {
-    configure("fjr_...", { baseUrl: "http://localhost:4000" }); // baseUrl optional
-  }, []);
+  const [showFeedback, setShowFeedback] = useState(false);
 
-  async function send() {
-    try {
-      await submit({
-        type: "feature",
-        message: "Haptic feedback on send",
-        email: "user@example.com",
-      });
-    } catch (e) {
-      if (e instanceof FeedJarError && e.code === "validation") {
-        // e.g. support without valid email
-      }
-    }
-  }
-
-  // …
+  return (
+    <>
+      <Button title="Send feedback" onPress={() => setShowFeedback(true)} />
+      <FeedJarFeedbackModal
+        visible={showFeedback}
+        onDismiss={() => setShowFeedback(false)}
+        allowedTypes={[FeedbackType.feedback, FeedbackType.featureRequest]}
+      />
+    </>
+  );
 }
 ```
 
-## Defaults
+Pass `allowedTypes` (order = segment order), optional `defaultType`, and `metadata` merged into the ingest payload.
 
-- **API:** `https://api.feedjar.in`
-- **Auth:** `Authorization: Bearer <key>` and `X-FeedJar-Key`
+## Custom UI
 
-Built-in modal UI is not included (unlike iOS/Android); compose your own screen and call `submit`.
+```tsx
+import {
+  FeedJar,
+  FeedbackType,
+  isFeedJarException,
+  FeedJarErrorCode,
+} from "@feedjar/sdk-react-native";
+
+try {
+  await FeedJar.submit({
+    type: FeedbackType.featureRequest,
+    message: "Add dark mode",
+    email: "user@example.com",
+    metadata: { screen: "settings", appVersion: "1.4.2" },
+  });
+} catch (error) {
+  if (
+    isFeedJarException(error) &&
+    error.code === FeedJarErrorCode.validation
+  ) {
+    // support without valid email
+  }
+}
+```
+
+**Support** requests must include an email containing `@` (validated before network), matching iOS `FeedJar.submit`.
+
+## Tests
+
+```bash
+npm test
+npm run typecheck
+```
 
 ## Publish to npm
 
-1. Join the [@feedjar](https://www.npmjs.com/org/feedjar) org on npm (or use an account with publish rights to that scope).
-2. Dry run locally:
-
-   ```bash
-   npm run build
-   npm publish --dry-run --access public
-   ```
-
-3. Authenticate once:
-
-   ```bash
-   npm login
-   ```
-
-4. Publish manually:
-
-   ```bash
-   npm publish --access public
-   ```
-
-5. Or tag a release for GitHub Actions:
-
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-   Add repo secret `NPM_TOKEN` — an npm automation token with publish access to `@feedjar`.
+1. `npm run build && npm publish --dry-run --access public`
+2. `npm login`, then `npm publish --access public`
+3. Or tag `v*` on GitHub with repo secret `NPM_TOKEN` (see `.github/workflows/publish.yml`).
 
 ## License
 
