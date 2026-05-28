@@ -17,7 +17,13 @@ feedjar-sdk-reactnative/
 
 ## Install
 
-Until published, point your app at this folder (or a monorepo workspace):
+```bash
+npm install @feedjar/sdk-react-native
+# or: pnpm add @feedjar/sdk-react-native
+# or: yarn add @feedjar/sdk-react-native
+```
+
+For local development against this repo:
 
 ```bash
 pnpm add ../feedjar-sdk-reactnative
@@ -73,6 +79,37 @@ export function App() {
 - **Auth:** `Authorization: Bearer <key>` and `X-FeedJar-Key`
 
 Built-in modal UI is not included (unlike iOS/Android); compose your own screen and call `submit`.
+
+## Publish to npm
+
+1. Join the [@feedjar](https://www.npmjs.com/org/feedjar) org on npm (or use an account with publish rights to that scope).
+2. Dry run locally:
+
+   ```bash
+   npm run build
+   npm publish --dry-run --access public
+   ```
+
+3. Authenticate once:
+
+   ```bash
+   npm login
+   ```
+
+4. Publish manually:
+
+   ```bash
+   npm publish --access public
+   ```
+
+5. Or tag a release for GitHub Actions:
+
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+   Add repo secret `NPM_TOKEN` — an npm automation token with publish access to `@feedjar`.
 
 ## License
 

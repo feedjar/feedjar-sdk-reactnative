@@ -1,16 +1,28 @@
 {
   "name": "@feedjar/sdk-react-native",
   "version": "0.1.0",
-  "private": true,
   "description": "FeedJar React Native SDK — configure, submit, and list feedback (parity with iOS FeedJarKit).",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "react-native": "./src/index.ts",
-  "files": ["dist", "src"],
+  "files": ["dist", "src", "LICENSE", "README.md", "CHANGELOG.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feedjar/feedjar-sdk-reactnative.git"
+  },
+  "bugs": {
+    "url": "https://github.com/feedjar/feedjar-sdk-reactnative/issues"
+  },
+  "homepage": "https://feedjar.in/docs/react-native-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
