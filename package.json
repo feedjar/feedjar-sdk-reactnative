@@ -1,6 +1,6 @@
 {
   "name": "@feedjar/sdk-react-native",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FeedJar React Native SDK — configure, submit, and built-in feedback UI (parity with iOS FeedJarKit).",
   "license": "MIT",
   "type": "module",

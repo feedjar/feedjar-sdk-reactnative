@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Restructured to match iOS FeedJarKit (`FeedJar`, `FeedJarClient`, `FeedJarFeedbackModal`).
+- `FeedJarException` / `FeedJarErrorCode`; removed standalone `configure`/`submit` exports.
+
 ## 0.1.0
 
 - Initial release aligned with iOS FeedJarKit.
