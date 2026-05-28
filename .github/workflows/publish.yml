@@ -6,7 +6,7 @@ on:
     tags:
       - "v*"
 
-# Required for npm trusted publishing (OIDC) — no long-lived token or OTP in CI.
+# npm trusted publishing (OIDC) — configure on npmjs.com (see PUBLISHING.md).
 permissions:
   id-token: write
   contents: read
@@ -37,10 +37,33 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Do NOT use the old NPM_6YQ7... Publish-token secret — it always triggers EOTP in CI.
+      # Either: (1) trusted publishing on npm, or (2) secrets.NPM_TOKEN = Automation token only.
       - name: Publish to npm
         if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-        run: npm publish --access public
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "Publishing via npm trusted publishing (OIDC)…"
+          else
+            echo "Publishing with NPM_TOKEN (must be an Automation token)…"
+          fi
+          npm publish --access public
         env:
-          # Fallback only if trusted publishing is not configured on npmjs.com yet.
-          # Must be an npm *Automation* token — Publish tokens always require --otp.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish failed — how to fix EOTP
+        if: failure()
+        run: |
+          echo "::error::npm publish failed. If logs show EOTP, your GitHub secret is a Publish token (needs browser/OTP)."
+          echo ""
+          echo "Fix A — Trusted publishing (publish from git, no token):"
+          echo "  1. https://www.npmjs.com/package/@feedjar/sdk-react-native/access"
+          echo "  2. Trusted publishing → GitHub Actions"
+          echo "  3. feedjar / feedjar-sdk-reactnative / workflow: publish.yml"
+          echo "  4. Delete secret NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK from repo settings"
+          echo "  5. Re-run this workflow"
+          echo ""
+          echo "Fix B — Automation token:"
+          echo "  1. https://www.npmjs.com/settings/feedjar-user/tokens → Automation (not Publish)"
+          echo "  2. gh secret set NPM_TOKEN -R feedjar/feedjar-sdk-reactnative"
+          exit 1
