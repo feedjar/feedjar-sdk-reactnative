@@ -1,63 +1,88 @@
 # Publishing `@feedjar/sdk-react-native`
 
-## Why publish fails with `EOTP`
+## Current state
 
-npm accounts with **2FA enabled** reject CI publishes when the GitHub secret is a **Publish** token. Publish tokens still need a 6-digit authenticator code on every `npm publish`.
+| Version | On npm? | Contents |
+|---------|---------|----------|
+| **0.1.0** | Yes | Old single-file SDK (7 files) |
+| **0.1.1** | **No** | iOS-aligned SDK (`FeedJar`, modal, tests) |
 
-**Green CI does not mean the package shipped** — check https://www.npmjs.com/package/@feedjar/sdk-react-native for the version you expect.
+Check: `npm view @feedjar/sdk-react-native version`
 
 ---
 
-## Recommended: npm trusted publishing (no token, no OTP in CI)
+## Publish 0.1.1 from your Mac (fastest)
 
-Package `0.1.0` already exists, so you can enable OIDC for this repo.
+You are **already** in the right folder when your prompt ends with `feedjar-sdk-reactnative`.  
+Do **not** run `cd feedjar-sdk-reactnative` again (that error is harmless).
 
-1. Open **package access settings** (logged in as a maintainer):  
-   https://www.npmjs.com/package/@feedjar/sdk-react-native/access
+1. Open your **authenticator app** (Google Authenticator, Authy, 1Password, etc.) for the npm account `feedjar-user`.
 
-2. Under **Trusted publishing** → **GitHub Actions**, add:
-   - **Organization / user:** `feedjar`
-   - **Repository:** `feedjar-sdk-reactnative`
-   - **Workflow filename:** `publish.yml`
-   - **Environment:** (leave empty unless you use one)
+2. Run (replace `123456` with the **real** 6-digit code — not the words `YOUR_6_DIGIT_CODE`):
 
-3. Save, then run the workflow:
+   ```bash
+   npm publish --access public --otp=123456
+   ```
+
+3. Confirm:
+
+   ```bash
+   npm view @feedjar/sdk-react-native version
+   # → 0.1.1
+   ```
+
+**Alternative:** run without `--otp` and complete the browser prompt (you did this for 0.1.0):
+
+```bash
+npm publish --access public
+# Press ENTER when npm prints a https://www.npmjs.com/auth/cli/... URL
+```
+
+---
+
+## Why CI still fails (`EOTP`)
+
+The GitHub secret `NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK` is a **Publish** token.  
+Publish tokens **always** need OTP in GitHub Actions — they cannot complete the browser login step.
+
+**Fix for CI (one-time):**
+
+1. https://www.npmjs.com/settings/feedjar-user/tokens  
+2. **Generate New Token** → choose **Automation** (not Publish).  
+3. Copy the token once, then:
+
+   ```bash
+   gh secret set NPM_TOKEN -R feedjar/feedjar-sdk-reactnative
+   # paste the npm_... token when prompted
+   ```
+
+4. Run:
+
    ```bash
    gh workflow run "Publish to npm" -R feedjar/feedjar-sdk-reactnative
    ```
 
-4. Confirm:
-   ```bash
-   npm view @feedjar/sdk-react-native version
-   ```
-
-The workflow uses `id-token: write` and npm 11+ so GitHub OIDC can publish without `NPM_TOKEN`.
+**Or** enable **Trusted publishing** (no token):  
+https://www.npmjs.com/package/@feedjar/sdk-react-native/access  
+→ GitHub Actions → repo `feedjar/feedjar-sdk-reactnative`, workflow `publish.yml`
 
 ---
 
-## Alternative: Automation token in GitHub
+## Common mistakes (from recent attempts)
 
-1. https://www.npmjs.com/settings/~tokens → **Generate New Token** → type **Automation** (not Publish).
-2. Store it:
-   ```bash
-   gh secret set NPM_TOKEN -R feedjar/feedjar-sdk-reactnative
-   ```
-3. Re-run the publish workflow.
+| Mistake | Fix |
+|---------|-----|
+| `--otp=YOUR_6_DIGIT_CODE` literally | Use real digits, e.g. `--otp=482913` |
+| `cd feedjar-sdk-reactnative` inside that repo | Skip `cd`; you're already there |
+| Green GitHub Action but still 0.1.0 on npm | Old workflow skipped publish; token still needs Automation |
+| `gh secret set npm_6yQ7...` lowercase | Workflow reads `NPM_TOKEN` or `NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK` (uppercase) |
 
 ---
 
-## Publish from your laptop (one-off)
-
-```bash
-cd feedjar-sdk-reactnative
-npm run build
-npm publish --access public --otp=123456
-```
-
-Replace `123456` with the code from your authenticator app.
-
-Or:
+## Helper script
 
 ```bash
 ./scripts/publish-local.sh
 ```
+
+Prompts for OTP and publishes the version in `package.json`.
