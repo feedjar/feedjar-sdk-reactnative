@@ -30,11 +30,12 @@ jobs:
         run: npm run build
 
       - name: Dry run publish
-        run: npm publish --dry-run
+        run: npm publish --dry-run --access public
 
       - name: Publish to npm
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
         run: npm publish --access public
         env:
-          # Use an npm *Automation* token (not Publish) so CI does not require --otp.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # npm "Automation" token (Publish tokens require --otp in CI).
+          # npm → GitHub integration may name this NPM_<token-id>; NPM_TOKEN also works.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_6YQ7F89GT5PU9WQGP2SQSMOICNUPLP31HRZK }}
